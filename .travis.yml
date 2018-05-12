@@ -7,4 +7,3 @@ go:
 
 before install:
   - go get github.com/kardianos/govendor/...
-  - go get -u github.com/golang/lint/golint
