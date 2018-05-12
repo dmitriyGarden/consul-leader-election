@@ -17,7 +17,7 @@ This package provides leader election through consul
     func main(){
         conf := api.DefaultConfig()
     	consul, _ := api.NewClient(conf)
-    	e := election.NewElection(consul, []string{"service:my.service"}, "my.service")
+    	e := election.NewElection(consul, []string{"healthID"}, "my.servicename")
     	e.logLevel = election.LogDebug
     	// start election
     	var wg sync.WaitGroup
