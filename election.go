@@ -67,7 +67,7 @@ func (e *Election) createSession() (err error) {
 }
 
 func (e *Election) checkSession() (bool, error) {
-	isset := false
+
 	if e.sessionID == "" {
 		return false, nil
 	}
@@ -76,11 +76,8 @@ func (e *Election) checkSession() (bool, error) {
 	if err != nil {
 		e.logError("Info session error " + err.Error())
 	}
-	if res != nil {
-		isset = true
-	}
 
-	return isset, err
+	return res != nil, err
 }
 
 // Try to acquire
