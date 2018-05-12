@@ -3,13 +3,13 @@
 all: lint test
 
 build: vendor
-    govendor install +local
+	govendor install +local
 
 vendor:
-    govendor sync
+	govendor sync
 
 test: vendor
-    govendor test +local
+	govendor test +local
 
 lint:
-    golint ./src/..
+	golint ./src/..
