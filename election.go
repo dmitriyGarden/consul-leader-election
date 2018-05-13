@@ -34,14 +34,14 @@ type Election struct {
 	stop         chan struct{} // chain to stop process
 }
 
-// Check a leader
+// IsLeader check a leader
 func (e *Election) IsLeader() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	return e.leader
 }
 
-// Log level LogDisable|LogError|LogInfo|LogDebug
+// SetLogLevel is setting level according constants LogDisable|LogError|LogInfo|LogDebug
 func (e *Election) SetLogLevel(level uint8) {
 	e.logLevel = level
 }
@@ -121,7 +121,7 @@ func (e *Election) getKvSession() (string, error) {
 	return p.Session, nil
 }
 
-// Start election
+// Init starting election process
 func (e *Election) Init() {
 	e.mutex.Lock()
 	if e.inited {

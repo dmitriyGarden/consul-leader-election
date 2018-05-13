@@ -9,7 +9,7 @@ vendor:
 	govendor sync
 
 test: vendor
-	govendor test +local -race -coverprofile=coverage.txt -covermode=atomic
+	go test -race -coverprofile=coverage.txt -covermode=atomic
 
 lint:
 	golint ./...
