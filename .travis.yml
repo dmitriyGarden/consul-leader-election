@@ -10,10 +10,9 @@ before_install:
   - go get -u github.com/golang/lint/golint
 
 env:
-  - CONSUL_VERSION=0.8.5 CONSUL_DOWNLOAD_URL=https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_arm64.zip
-  - GOOS=linux
-  - GOARCH=amd64
+  - CONSUL_VERSION=0.8.5 CONSUL_DOWNLOAD_URL=https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip
+
 install:
   - wget ${CONSUL_DOWNLOAD_URL}
-  - unzip ./consul_${CONSUL_VERSION}_linux_arm64.zip
+  - unzip ./consul_${CONSUL_VERSION}_linux_amd64.zip
   - cp ./consul ${HOME}/gopath/bin/consul
