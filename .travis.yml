@@ -13,5 +13,5 @@ env:
   - CONSUL_VERSION=0.8.5 CONSUL_DOWNLOAD_URL=https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_arm64.zip
 install:
   - wget ${CONSUL_DOWNLOAD_URL}
-  - tar -xzf ./consul_${CONSUL_VERSION}_linux_arm64.zip
+  - unzip ./consul_${CONSUL_VERSION}_linux_arm64.zip
   - cp ./consul /usr/bin/consul
