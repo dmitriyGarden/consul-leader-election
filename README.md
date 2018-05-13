@@ -1,4 +1,4 @@
-Consul leader election
+Consul leader election [![Build Status](https://travis-ci.org/dmitriyGarden/consul-leader-election.svg?branch=master)](https://travis-ci.org/dmitriyGarden/consul-leader-election)
 ======================
 
 This package provides leader election through consul
