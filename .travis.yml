@@ -14,4 +14,4 @@ env:
 install:
   - wget ${CONSUL_DOWNLOAD_URL}
   - unzip ./consul_${CONSUL_VERSION}_linux_arm64.zip
-  - cp ./consul /usr/bin/consul
+  - cp ./consul /usr/local/bin/consul
