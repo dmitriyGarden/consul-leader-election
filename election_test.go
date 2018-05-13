@@ -257,7 +257,9 @@ func makeCluster(t *testing.T) []*testutil.TestServer {
 		}
 		if err != nil {
 			for j := range servers {
-				servers[j].Stop()
+				if servers[j] != nil {
+					servers[j].Stop()
+				}
 			}
 			t.Fatal(err)
 		}
