@@ -1,6 +1,6 @@
-.PHONY: all build vendor test lint
+.PHONY: all build vendor test lint path
 
-all: lint test
+all: path lint test
 
 build: vendor
 	govendor install +local
@@ -13,3 +13,6 @@ test: vendor
 
 lint:
 	golint ./...
+
+path:
+	echo $PATH
