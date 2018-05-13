@@ -98,7 +98,7 @@ func TestNewElection(t *testing.T) {
 		if i.e.IsLeader() {
 			i.e.Stop()
 			if i.e.IsLeader() {
-				t.Error("Elector is steel a leader after stop election")
+				t.Errorf("%sElector is steel a leader after stop election", i.e.LogPrefix)
 			}
 			break
 		}
