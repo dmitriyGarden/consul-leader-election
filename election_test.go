@@ -127,12 +127,12 @@ func TestNewElection(t *testing.T) {
 func stopLeaderHelthCheck(t *testing.T, items []*item, servers []*testutil.TestServer) {
 	for i := range items {
 		if items[i].e.IsLeader() {
-			servers[items[i].i].AddCheck(t, getHid(i), getSrId(i), "critical")
+			servers[items[i].i].AddCheck(t, getHID(i), getSrID(i), "critical")
 			time.Sleep(5 * time.Second)
 			if items[i].e.IsLeader() {
 				t.Error("Elector is steel a leader after disable health check")
 			}
-			servers[items[i].i].AddCheck(t, getHid(i), getSrId(i), "passing")
+			servers[items[i].i].AddCheck(t, getHID(i), getSrID(i), "passing")
 			break
 		}
 	}
@@ -181,17 +181,17 @@ func stopConsulServiceWithLeader(t *testing.T, items []*item, servers []*testuti
 
 func serviceRegister(t *testing.T, items []*item, servers []*testutil.TestServer) {
 	for j, i := range items {
-		servId := getSrId(j)
-		hId := getHid(j)
-		servers[i.i].AddService(t, servId, "passing", []string{})
-		servers[i.i].AddCheck(t, hId, servId, "passing")
+		servID := getSrID(j)
+		hID := getHID(j)
+		servers[i.i].AddService(t, servID, "passing", []string{})
+		servers[i.i].AddCheck(t, hID, servID, "passing")
 	}
 }
 
-func getHid(i int) string {
+func getHID(i int) string {
 	return fmt.Sprintf("%s:%d", healthPrefix, i)
 }
-func getSrId(i int) string {
+func getSrID(i int) string {
 	return fmt.Sprintf("%s:%d", serviceName, i)
 }
 
@@ -228,7 +228,7 @@ func makeServices(t *testing.T, servers []*testutil.TestServer) []*item {
 			t.Fatal(err)
 		}
 		services[i] = &item{
-			NewElection(client, []string{getHid(i)}, serviceName),
+			NewElection(client, []string{getHID(i)}, serviceName),
 			srv,
 		}
 		services[i].e.SetLogLevel(LogDebug)
