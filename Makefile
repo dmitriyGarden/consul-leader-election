@@ -1,6 +1,6 @@
-.PHONY: all build vendor test
+.PHONY: all build vendor test lint
 
-all: test
+all: lint test
 
 build: vendor
 	govendor install +local
@@ -11,3 +11,5 @@ vendor:
 test: vendor
 	govendor test +local
 
+lint:
+	golint ./src/...
