@@ -20,12 +20,10 @@ This package provides leader election through consul
     	e := election.NewElection(consul, []string{"healthID"}, "my.servicename")
     	e.logLevel = election.LogDebug
     	// start election
-    	var wg sync.WaitGroup
-    	wg.Add(1)
-    	go func(){
-    	        defer wg.Done()
-    	        e.Init()
-    	}()
+    	go  e.Init()
+    	if e.IsLeader() {
+            fmt.Println("I'm a leader!")
+        }
     	time.Sleep(30 * time.Second)
     	if e.IsLeader() {
     		fmt.Println("I'm a leader!")
@@ -37,5 +35,4 @@ This package provides leader election through consul
     		fmt.Println("I'm a leader!")
     	}
     	e.Stop()
-        wg.Wait()
     }

@@ -39,15 +39,12 @@ func TestNewElection(t *testing.T) {
 	services := makeServices(t, servers)
 
 	log.Println("================== Start processing without health checks =====================")
-	var wg sync.WaitGroup
 	counter := serviceNum * 2
 	mutex := &sync.Mutex{}
-	wg.Add(counter)
 
 	for _, i := range services {
 		go func(i *item) {
 			defer func() {
-				wg.Done()
 				mutex.Lock()
 				counter--
 				mutex.Unlock()
@@ -57,7 +54,6 @@ func TestNewElection(t *testing.T) {
 		// The second process should not be started
 		go func(i *item) {
 			defer func() {
-				wg.Done()
 				mutex.Lock()
 				counter--
 				mutex.Unlock()
@@ -66,9 +62,11 @@ func TestNewElection(t *testing.T) {
 		}(i)
 	}
 	time.Sleep(5 * time.Second)
+	mutex.Lock()
 	if counter != serviceNum {
 		t.Errorf("There are %d gorutines instead %d", counter, serviceNum)
 	}
+	mutex.Unlock()
 
 	if !mustNotLeader(services) {
 		t.Errorf("Must not be a leader. We have no available healthchecks.")
@@ -105,9 +103,11 @@ func TestNewElection(t *testing.T) {
 			break
 		}
 	}
-	cl = waitForLeader(services)
-	if cl != 1 {
-		t.Errorf("There are %d leaders instead 1 after stop leader", cl)
+	if serviceNum > 1 {
+		cl = waitForLeader(services)
+		if cl != 1 {
+			t.Errorf("There are %d leaders instead 1 after stop leader", cl)
+		}
 	}
 
 	log.Println("================== Try to stop a consul server =====================")
@@ -118,7 +118,6 @@ func TestNewElection(t *testing.T) {
 	for _, i := range services {
 		i.e.Stop()
 	}
-	wg.Wait()
 	if !mustNotLeader(services) {
 		t.Errorf("Must not be a leader. We stop all processes")
 	}
@@ -136,11 +135,13 @@ func stopLeaderHelthCheck(t *testing.T, items []*item, servers []*testutil.TestS
 			break
 		}
 	}
-	time.Sleep(25 * time.Second)
-	cl := countLeader(items)
-	if cl != 1 {
-		t.Errorf("There are %d leaders instead 1 after disable health check", cl)
+	if serviceNum > 1 {
+		cl := waitForLeader(items)
+		if cl != 1 {
+			t.Errorf("There are %d leaders instead 1 after disable health check", cl)
+		}
 	}
+
 }
 
 func waitForLeader(items []*item) int {
@@ -170,12 +171,11 @@ func stopConsulServiceWithLeader(t *testing.T, items []*item, servers []*testuti
 			servers[i.i].Stop()
 		}
 	}
-	if len(sr) > 1 {
-		time.Sleep(30 * time.Second)
-		cl = countLeader(items)
-	}
-	if cl != 1 {
-		t.Errorf("There are %d leaders instead 1 after stop consul node", cl)
+	if len(sr) > 1 && serviceNum > 1 {
+		cl = waitForLeader(items)
+		if cl != 1 {
+			t.Errorf("There are %d leaders instead 1 after stop consul node", cl)
+		}
 	}
 }
 

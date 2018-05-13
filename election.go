@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// Log levels
 const (
 	LogDisable = iota
 	LogError
@@ -18,21 +19,25 @@ const (
 	LogDebug
 )
 
+// Election implements to detect a leader in a cluster of services
 type Election struct {
 	Client       *api.Client // Consul client
 	Checks       []string    // Slice of associated health checks
-	leader       bool        // Flag of leader
+	leader       bool        // Flag of a leader
 	Kv           string      // Key in Consul kv
-	sessionID    string      // Id session
+	sessionID    string      // Id of session
 	logLevel     uint8       //  Log level LogDisable|LogError|LogInfo|LogDebug
 	inited       bool        // Flag of init.
 	mutex        *sync.Mutex
 	CheckTimeout time.Duration
-	LogPrefix    string
+	LogPrefix    string        // Prefix for a log
+	stop         chan struct{} // chain to stop process
 }
 
-// Check leader
+// Check a leader
 func (e *Election) IsLeader() bool {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 	return e.leader
 }
 
@@ -51,6 +56,7 @@ func NewElection(c *api.Client, checks []string, service string) *Election {
 		mutex:        &sync.Mutex{},
 		CheckTimeout: 5 * time.Second,
 		LogPrefix:    "[EL] ",
+		stop:         make(chan struct{}),
 	}
 	return e
 }
@@ -95,10 +101,12 @@ func (e *Election) acquire() (bool, error) {
 }
 
 func (e *Election) disableLeader() {
+	e.mutex.Lock()
 	if e.leader {
 		e.leader = false
 		e.logDebug("I'm not a leader.:(")
 	}
+	e.mutex.Unlock()
 }
 
 func (e *Election) getKvSession() (string, error) {
@@ -124,16 +132,18 @@ func (e *Election) Init() {
 	e.inited = true
 	e.mutex.Unlock()
 	for {
-		if !e.inited {
-			e.disableLeader()
-			e.destroyCurrentSession()
+		if !e.isInit() {
 			break
 		}
 		e.process()
+		if !e.isInit() {
+			break
+		}
 		wait(e.CheckTimeout)
 	}
 }
 
+// Start re-election
 func (e *Election) ReElection() error {
 	s, err := e.getKvSession()
 	if s != "" {
@@ -162,7 +172,7 @@ func (e *Election) isNeedAquire() bool {
 	var res string
 	var err error
 	for {
-		if !e.inited {
+		if !e.isInit() {
 			break
 		}
 		res, err = e.getKvSession()
@@ -199,25 +209,42 @@ func (e *Election) process() {
 }
 
 func (e *Election) enableLeader() {
-	if e.inited {
+	e.mutex.Lock()
+	if e.isInit() {
 		e.leader = true
 		e.logDebug("I'm a leader!")
-	}
-
-}
-
-func (e *Election) Stop() {
-	e.mutex.Lock()
-	if e.inited {
-		e.inited = false
-		e.disableLeader()
 	}
 	e.mutex.Unlock()
 }
 
+// Spot election process
+func (e *Election) Stop() {
+	e.mutex.Lock()
+	if !e.inited {
+		e.mutex.Unlock()
+		return
+	}
+	e.mutex.Unlock()
+	e.stop <- struct{}{}
+}
+
+func (e *Election) isInit() bool {
+	for {
+		select {
+		case <-e.stop:
+			e.inited = false
+			e.logDebug("Stop signal recieved")
+			e.disableLeader()
+			e.destroyCurrentSession()
+		default:
+			return e.inited
+		}
+	}
+}
+
 func (e *Election) waitSession() {
 	for {
-		if !e.inited {
+		if !e.isInit() {
 			break
 		}
 		isset, err := e.checkSession()
@@ -229,6 +256,9 @@ func (e *Election) waitSession() {
 		e.disableLeader()
 		if err != nil {
 			e.logDebug("Try to get session info again.")
+			if !e.isInit() {
+				break
+			}
 			wait(e.CheckTimeout)
 			continue
 		}
@@ -236,6 +266,9 @@ func (e *Election) waitSession() {
 
 		if err == nil {
 			e.logDebug("Session " + e.sessionID + " created")
+			break
+		}
+		if !e.isInit() {
 			break
 		}
 		wait(e.CheckTimeout)

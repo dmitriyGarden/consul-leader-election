@@ -16,3 +16,6 @@ install:
   - wget ${CONSUL_DOWNLOAD_URL}
   - unzip ./consul_${CONSUL_VERSION}_linux_amd64.zip
   - cp ./consul ${HOME}/gopath/bin/consul
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
