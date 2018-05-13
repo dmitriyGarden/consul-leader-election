@@ -17,12 +17,6 @@
 			"versionExact": "v0.8.5"
 		},
 		{
-			"path": "github.com/hashicorp/consul/consul/structs",
-			"revision": "v0.8",
-			"version": "v0.8",
-			"versionExact": "v0.8.5"
-		},
-		{
 			"checksumSHA1": "w5CkiM+FR4NSent1tmnAvZCkMbU=",
 			"path": "github.com/hashicorp/consul/testutil",
 			"revision": "2c7715154d8d4568524b76d2d4deb7ca6fd1b285",
