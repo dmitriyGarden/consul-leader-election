@@ -217,7 +217,7 @@ func (e *Election) enableLeader() {
 	e.mutex.Unlock()
 }
 
-// Spot election process
+// Stop election process
 func (e *Election) Stop() {
 	e.mutex.Lock()
 	if !e.inited {
@@ -225,17 +225,18 @@ func (e *Election) Stop() {
 		return
 	}
 	e.mutex.Unlock()
-	e.logDebug("Call stop")
 	e.stop <- struct{}{}
-	e.logDebug("Go on")
+	// Wait until the leader status changes
+	e.stop <- struct{}{}
+
 }
 
 func (e *Election) isInit() bool {
 	for {
 		select {
 		case <-e.stop:
-			e.inited = false
 			e.logDebug("Stop signal recieved")
+			e.inited = false
 			e.disableLeader()
 			e.destroyCurrentSession()
 		default:
