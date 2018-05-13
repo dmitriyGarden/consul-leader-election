@@ -31,7 +31,8 @@ type Election struct {
 	mutex        *sync.Mutex
 	CheckTimeout time.Duration
 	LogPrefix    string        // Prefix for a log
-	stop         chan struct{} // chain to stop process
+	stop         chan struct{} // chnnel to stop process
+	success      chan struct{} // channel for the signal that the process is stopped
 }
 
 // IsLeader check a leader
@@ -57,6 +58,7 @@ func NewElection(c *api.Client, checks []string, service string) *Election {
 		CheckTimeout: 5 * time.Second,
 		LogPrefix:    "[EL] ",
 		stop:         make(chan struct{}),
+		success:      make(chan struct{}),
 	}
 	return e
 }
@@ -226,19 +228,18 @@ func (e *Election) Stop() {
 	}
 	e.mutex.Unlock()
 	e.stop <- struct{}{}
-	// Wait until the leader status changes
-	e.stop <- struct{}{}
-
+	<-e.success
 }
 
 func (e *Election) isInit() bool {
 	for {
 		select {
 		case <-e.stop:
-			e.logDebug("Stop signal recieved")
 			e.inited = false
+			e.logDebug("Stop signal recieved")
 			e.disableLeader()
 			e.destroyCurrentSession()
+			e.success <- struct{}{}
 		default:
 			return e.inited
 		}
@@ -253,7 +254,6 @@ func (e *Election) waitSession() {
 		isset, err := e.checkSession()
 
 		if isset {
-			e.logDebug("Session " + e.sessionID + " already exists")
 			break
 		}
 		e.disableLeader()

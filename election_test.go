@@ -41,7 +41,6 @@ func TestNewElection(t *testing.T) {
 	log.Println("================== Start processing without health checks =====================")
 	counter := serviceNum * 2
 	mutex := &sync.Mutex{}
-
 	for _, i := range services {
 		go func(i *item) {
 			defer func() {
@@ -97,6 +96,7 @@ func TestNewElection(t *testing.T) {
 	for _, i := range services {
 		if i.e.IsLeader() {
 			i.e.Stop()
+			time.Sleep(1 * time.Second)
 			if i.e.IsLeader() {
 				t.Errorf("%sElector is steel a leader after stop election", i.e.LogPrefix)
 			}
