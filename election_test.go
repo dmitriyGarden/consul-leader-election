@@ -16,7 +16,7 @@ const (
 	serviceName  = "test.service"
 	healthPrefix = "health"
 	clucterSize  = 3
-	serviceNum   = 5
+	serviceNum   = 10
 )
 
 type item struct {
@@ -135,11 +135,9 @@ func stopLeaderHelthCheck(t *testing.T, items []*item, servers []*testutil.TestS
 			break
 		}
 	}
-	if serviceNum > 1 {
-		cl := waitForLeader(items)
-		if cl != 1 {
-			t.Errorf("There are %d leaders instead 1 after disable health check", cl)
-		}
+	cl := waitForLeader(items)
+	if cl != 1 {
+		t.Errorf("There are %d leaders instead 1 after disable health check", cl)
 	}
 
 }

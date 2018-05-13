@@ -224,10 +224,10 @@ func (e *Election) Stop() {
 		e.mutex.Unlock()
 		return
 	}
-	e.inited = false
-	e.leader = false
 	e.mutex.Unlock()
+	e.logDebug("Call stop")
 	e.stop <- struct{}{}
+	e.logDebug("Go on")
 }
 
 func (e *Election) isInit() bool {
