@@ -224,6 +224,8 @@ func (e *Election) Stop() {
 		e.mutex.Unlock()
 		return
 	}
+	e.inited = false
+	e.leader = false
 	e.mutex.Unlock()
 	e.stop <- struct{}{}
 }
