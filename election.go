@@ -241,6 +241,7 @@ func (e *Election) isInit() bool {
 			e.disableLeader()
 			e.destroyCurrentSession()
 			e.success <- struct{}{}
+			e.logDebug("Send success")
 		default:
 			return e.inited
 		}
