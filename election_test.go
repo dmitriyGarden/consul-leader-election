@@ -127,7 +127,7 @@ func stopLeaderHelthCheck(t *testing.T, items []*item, servers []*testutil.TestS
 	for i := range items {
 		if items[i].e.IsLeader() {
 			servers[items[i].i].AddCheck(t, getHID(i), getSrID(i), "critical")
-			time.Sleep(5 * time.Second)
+			time.Sleep(6 * time.Second)
 			if items[i].e.IsLeader() {
 				t.Error("Elector is steel a leader after disable health check")
 			}
