@@ -143,6 +143,7 @@ func (e *Election) Init() {
 		}
 		wait(e.CheckTimeout)
 	}
+	e.logDebug("I'm finished")
 }
 
 // Start re-election
