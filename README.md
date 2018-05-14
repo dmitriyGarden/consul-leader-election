@@ -26,13 +26,13 @@ This package provides leader election through consul
     	if e.IsLeader() {
             fmt.Println("I'm a leader!")
         }
-    	time.Sleep(30 * time.Second)
+    	// to do something ....
     	if e.IsLeader() {
     		fmt.Println("I'm a leader!")
     	}
     	// re-election
     	e.ReElection()
-    	time.Sleep(30 * time.Second)
+    	// to do something ....
     	if e.IsLeader() {
     		fmt.Println("I'm a leader!")
     	}
