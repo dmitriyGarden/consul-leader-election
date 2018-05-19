@@ -28,17 +28,17 @@ type Election struct {
 	sessionID    string      // Id of session
 	logLevel     uint8       //  Log level LogDisable|LogError|LogInfo|LogDebug
 	inited       bool        // Flag of init.
-	mutex        *sync.Mutex
 	CheckTimeout time.Duration
 	LogPrefix    string        // Prefix for a log
 	stop         chan struct{} // chnnel to stop process
 	success      chan struct{} // channel for the signal that the process is stopped
+	sync.RWMutex
 }
 
 // IsLeader check a leader
 func (e *Election) IsLeader() bool {
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	return e.leader
 }
 
@@ -54,7 +54,6 @@ func NewElection(c *api.Client, checks []string, service string) *Election {
 		Checks:       append(checks, "serfHealth"),
 		leader:       false,
 		Kv:           "services/" + strings.Replace(service, ".", "/", -1) + "/leader",
-		mutex:        &sync.Mutex{},
 		CheckTimeout: 5 * time.Second,
 		LogPrefix:    "[EL] ",
 		stop:         make(chan struct{}),
@@ -103,12 +102,12 @@ func (e *Election) acquire() (bool, error) {
 }
 
 func (e *Election) disableLeader() {
-	e.mutex.Lock()
+	e.Lock()
 	if e.leader {
 		e.leader = false
 		e.logDebug("I'm not a leader.:(")
 	}
-	e.mutex.Unlock()
+	e.Unlock()
 }
 
 func (e *Election) getKvSession() (string, error) {
@@ -125,14 +124,14 @@ func (e *Election) getKvSession() (string, error) {
 
 // Init starting election process
 func (e *Election) Init() {
-	e.mutex.Lock()
+	e.Lock()
 	if e.inited {
-		e.mutex.Unlock()
+		e.Unlock()
 		e.logInfo("Only one init available")
 		return
 	}
 	e.inited = true
-	e.mutex.Unlock()
+	e.Unlock()
 	for {
 		if !e.isInit() {
 			break
@@ -212,22 +211,22 @@ func (e *Election) process() {
 }
 
 func (e *Election) enableLeader() {
-	e.mutex.Lock()
+	e.Lock()
 	if e.isInit() {
 		e.leader = true
 		e.logDebug("I'm a leader!")
 	}
-	e.mutex.Unlock()
+	e.Unlock()
 }
 
 // Stop election process
 func (e *Election) Stop() {
-	e.mutex.Lock()
+	e.RLock()
 	if !e.inited {
-		e.mutex.Unlock()
+		e.RUnlock()
 		return
 	}
-	e.mutex.Unlock()
+	e.RUnlock()
 	e.stop <- struct{}{}
 	<-e.success
 }
