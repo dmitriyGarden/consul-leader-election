@@ -23,6 +23,7 @@ const (
 type Election struct {
 	Client       *api.Client // Consul client
 	Checks       []string    // Slice of associated health checks
+	service      string      // Service name
 	leader       bool        // Flag of a leader
 	Kv           string      // Key in Consul kv
 	sessionID    string      // Id of session
@@ -52,6 +53,7 @@ func NewElection(c *api.Client, checks []string, service string) *Election {
 	e := &Election{
 		Client:       c,
 		Checks:       append(checks, "serfHealth"),
+		service:      service,
 		leader:       false,
 		Kv:           "services/" + strings.Replace(service, ".", "/", -1) + "/leader",
 		CheckTimeout: 5 * time.Second,
@@ -152,6 +154,10 @@ func (e *Election) ReElection() error {
 		e.destroySession(s)
 	}
 	return err
+}
+
+func (e *Election) GetService() string {
+	return e.service
 }
 
 func (e *Election) destroySession(sesID string) error {
