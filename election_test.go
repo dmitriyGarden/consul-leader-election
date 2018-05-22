@@ -231,6 +231,12 @@ func makeServices(t *testing.T, servers []*testutil.TestServer) []*item {
 		}
 		services[i].e.SetLogLevel(LogDebug)
 		services[i].e.LogPrefix = fmt.Sprintf("[EL-%d]", i)
+		// check service name
+		srvName := services[i].e.GetService()
+		if (srvName != serviceName)
+		{
+			t.Errorf("Service name mismatch, %s expected, got %s", serviceName, srvName)
+		}
 	}
 	return services
 }
