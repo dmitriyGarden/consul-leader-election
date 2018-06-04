@@ -35,14 +35,14 @@ This package provides leader election through consul
         	T: "My service",
         }
 
-    	elconf := ElectionConfig{
+    	elconf := &ElectionConfig{
                   	CheckTimeout: 5 * time.Second,
                   	Client: client,
                   	Checks: []string{"healthID")},
                   	Key: "service/test-election/leader",
                   	Event: n,
                  }
-    	e := election.NewElection(n)
+    	e := election.NewElection(elconf)
     	e.logLevel = election.LogDebug
     	// start election
     	go  e.Init()
