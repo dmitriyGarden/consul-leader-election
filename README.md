@@ -40,10 +40,10 @@ This package provides leader election through consul
                   	Client: client,
                   	Checks: []string{"healthID")},
                   	Key: "service/test-election/leader",
+                  	LogLevel: election.LogDebug
                   	Event: n,
                  }
     	e := election.NewElection(elconf)
-    	e.logLevel = election.LogDebug
     	// start election
     	go  e.Init()
     	if e.IsLeader() {
