@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/consul/api"
 	"log"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 )
@@ -32,7 +31,24 @@ type Election struct {
 	LogPrefix    string        // Prefix for a log
 	stop         chan struct{} // chnnel to stop process
 	success      chan struct{} // channel for the signal that the process is stopped
+	event        Notifier
 	sync.RWMutex
+}
+
+// Notifier can tell your code the event of the leader's status change
+type Notifier interface {
+	EventLeader(e bool) // The method will be called when the leader status is changed
+}
+
+// ElectionConfig config for Election
+type ElectionConfig struct {
+	Client       *api.Client // Consul client
+	Checks       []string    // Slice of associated health checks
+	Key          string      // Key in Consul KV
+	LogLevel     uint8       // Log level LogDisable|LogError|LogInfo|LogDebug
+	LogPrefix    string      // Prefix for a log
+	Event        Notifier
+	CheckTimeout time.Duration
 }
 
 // IsLeader check a leader
@@ -48,16 +64,17 @@ func (e *Election) SetLogLevel(level uint8) {
 }
 
 // Params: Consul client, slice of associated health checks, service name
-func NewElection(c *api.Client, checks []string, service string) *Election {
+func NewElection(c *ElectionConfig) *Election {
 	e := &Election{
-		Client:       c,
-		Checks:       append(checks, "serfHealth"),
+		Client:       c.Client,
+		Checks:       append(c.Checks, "serfHealth"),
 		leader:       false,
-		Kv:           "services/" + strings.Replace(service, ".", "/", -1) + "/leader",
-		CheckTimeout: 5 * time.Second,
-		LogPrefix:    "[EL] ",
+		Kv:           c.Key,
+		CheckTimeout: c.CheckTimeout,
+		LogPrefix:    c.LogPrefix,
 		stop:         make(chan struct{}),
 		success:      make(chan struct{}),
+		event:        c.Event,
 	}
 	return e
 }
@@ -106,6 +123,9 @@ func (e *Election) disableLeader() {
 	if e.leader {
 		e.leader = false
 		e.logDebug("I'm not a leader.:(")
+		if e.event != nil {
+			e.event.EventLeader(false)
+		}
 	}
 	e.Unlock()
 }
@@ -215,6 +235,9 @@ func (e *Election) enableLeader() {
 	if e.isInit() {
 		e.leader = true
 		e.logDebug("I'm a leader!")
+		if e.event != nil {
+			e.event.EventLeader(true)
+		}
 	}
 	e.Unlock()
 }

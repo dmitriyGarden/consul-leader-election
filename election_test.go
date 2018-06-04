@@ -24,6 +24,14 @@ type item struct {
 	i int
 }
 
+type notify struct {
+	I int
+}
+
+func (n *notify) EventLeader(f bool) {
+	log.Println("===>", n.I, f)
+}
+
 func TestNewElection(t *testing.T) {
 
 	log.Println("================== Create claster of consul =====================")
@@ -225,12 +233,22 @@ func makeServices(t *testing.T, servers []*testutil.TestServer) []*item {
 		if err != nil {
 			t.Fatal(err)
 		}
+		n := &notify{
+			I: i,
+		}
+		conf := ElectionConfig{
+			CheckTimeout: 5 * time.Second,
+			Client:       client,
+			Checks:       []string{getHID(i)},
+			Key:          "service/test-election/leader",
+			LogPrefix:    fmt.Sprintf("[EL-%d]", i),
+			Event:        n,
+		}
 		services[i] = &item{
-			NewElection(client, []string{getHID(i)}, serviceName),
+			NewElection(&conf),
 			srv,
 		}
 		services[i].e.SetLogLevel(LogDebug)
-		services[i].e.LogPrefix = fmt.Sprintf("[EL-%d]", i)
 	}
 	return services
 }

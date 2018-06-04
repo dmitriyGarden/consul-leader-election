@@ -19,6 +19,29 @@ This package provides leader election through consul
     func main(){
         conf := api.DefaultConfig()
     	consul, _ := api.NewClient(conf)
+    	type notify struct {
+    	    T  string
+    	}
+
+        func (n *notify)EventLeader(f bool)  {
+            if f {
+                 fmt.Println(n.T, "I'm the leader!")
+            } else {
+                fmt.Println(n.T, "I'm no longer the leader!")
+            }
+        }
+
+        n := &notify{
+        	T: "My service",
+        }
+
+    	elconf := ElectionConfig{
+                  	CheckTimeout: 5 * time.Second,
+                  	Client: client,
+                  	Checks: []string{"healthID")},
+                  	Key: "service/test-election/leader",
+                  	Event: n,
+                 }
     	e := election.NewElection(consul, []string{"healthID"}, "my.servicename")
     	e.logLevel = election.LogDebug
     	// start election
