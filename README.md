@@ -42,7 +42,7 @@ This package provides leader election through consul
                   	Key: "service/test-election/leader",
                   	Event: n,
                  }
-    	e := election.NewElection(consul, []string{"healthID"}, "my.servicename")
+    	e := election.NewElection(n)
     	e.logLevel = election.LogDebug
     	// start election
     	go  e.Init()
