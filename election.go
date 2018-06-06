@@ -31,7 +31,7 @@ type Election struct {
 	LogPrefix    string        // Prefix for a log
 	stop         chan struct{} // chnnel to stop process
 	success      chan struct{} // channel for the signal that the process is stopped
-	event        Notifier
+	Event        Notifier
 	sync.RWMutex
 }
 
@@ -74,7 +74,7 @@ func NewElection(c *ElectionConfig) *Election {
 		LogPrefix:    c.LogPrefix,
 		stop:         make(chan struct{}),
 		success:      make(chan struct{}),
-		event:        c.Event,
+		Event:        c.Event,
 	}
 	return e
 }
@@ -123,8 +123,8 @@ func (e *Election) disableLeader() {
 	if e.leader {
 		e.leader = false
 		e.logDebug("I'm not a leader.:(")
-		if e.event != nil {
-			e.event.EventLeader(false)
+		if e.Event != nil {
+			e.Event.EventLeader(false)
 		}
 	}
 	e.Unlock()
@@ -235,8 +235,8 @@ func (e *Election) enableLeader() {
 	if e.isInit() {
 		e.leader = true
 		e.logDebug("I'm a leader!")
-		if e.event != nil {
-			e.event.EventLeader(true)
+		if e.Event != nil {
+			e.Event.EventLeader(true)
 		}
 	}
 	e.Unlock()
