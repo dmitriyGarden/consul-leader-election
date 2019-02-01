@@ -17,12 +17,6 @@
 			"versionExact": "v1.3.1"
 		},
 		{
-			"path": "github.com/hashicorp/consul/consul/structs",
-			"revision": "",
-			"version": "v1.3.1",
-			"versionExact": "v1.3.1"
-		},
-		{
 			"checksumSHA1": "E28E4zR1FN2v1Xiq4FUER7KVN9M=",
 			"path": "github.com/hashicorp/consul/lib/freeport",
 			"revision": "82e741f36fb1e968400b2420fba7b12c936d1323",
@@ -37,12 +31,12 @@
 			"versionExact": "v1.3.1"
 		},
 		{
-			"checksumSHA1": "J8TTDc84MvAyXE/FrfgS+xc/b6s=",
+			"checksumSHA1": "SCb2b91UYiB/23+SNDBlU5OZfFA=",
 			"path": "github.com/hashicorp/consul/testutil/retry",
-			"revision": "2c7715154d8d4568524b76d2d4deb7ca6fd1b285",
-			"revisionTime": "2017-06-27T17:42:54Z",
-			"version": "v0.8",
-			"versionExact": "v0.8.5"
+			"revision": "f2b13f3020c9c446eb9125e0cc399fafd4460d86",
+			"revisionTime": "2018-11-13T22:24:49Z",
+			"version": "v1.3.1",
+			"versionExact": "v1.3.1"
 		},
 		{
 			"checksumSHA1": "YAq1rqZIp+M74Q+jMBQkkMKm3VM=",
