@@ -9,20 +9,32 @@
 			"revisionTime": "2018-02-21T18:27:44Z"
 		},
 		{
-			"checksumSHA1": "L4bajYItNZdsrcbvTza6vtLCDis=",
+			"checksumSHA1": "PJDKLws64a9Lb00kp9qgyhAD81s=",
 			"path": "github.com/hashicorp/consul/api",
-			"revision": "2c7715154d8d4568524b76d2d4deb7ca6fd1b285",
-			"revisionTime": "2017-06-27T17:42:54Z",
-			"version": "v0.8",
-			"versionExact": "v0.8.5"
+			"revision": "f2b13f3020c9c446eb9125e0cc399fafd4460d86",
+			"revisionTime": "2018-11-13T22:24:49Z",
+			"version": "v1.3.1",
+			"versionExact": "v1.3.1"
 		},
 		{
-			"checksumSHA1": "w5CkiM+FR4NSent1tmnAvZCkMbU=",
+			"path": "github.com/hashicorp/consul/consul/structs",
+			"revision": "",
+			"version": "v1.3.1",
+			"versionExact": "v1.3.1"
+		},
+		{
+			"checksumSHA1": "E28E4zR1FN2v1Xiq4FUER7KVN9M=",
+			"path": "github.com/hashicorp/consul/lib/freeport",
+			"revision": "82e741f36fb1e968400b2420fba7b12c936d1323",
+			"revisionTime": "2019-01-30T22:47:32Z"
+		},
+		{
+			"checksumSHA1": "wBAq+TOWekDh04uRCN8B4g3iDs8=",
 			"path": "github.com/hashicorp/consul/testutil",
-			"revision": "2c7715154d8d4568524b76d2d4deb7ca6fd1b285",
-			"revisionTime": "2017-06-27T17:42:54Z",
-			"version": "v0.8",
-			"versionExact": "v0.8.5"
+			"revision": "f2b13f3020c9c446eb9125e0cc399fafd4460d86",
+			"revisionTime": "2018-11-13T22:24:49Z",
+			"version": "v1.3.1",
+			"versionExact": "v1.3.1"
 		},
 		{
 			"checksumSHA1": "J8TTDc84MvAyXE/FrfgS+xc/b6s=",
@@ -73,6 +85,18 @@
 			"path": "github.com/mitchellh/go-homedir",
 			"revision": "b8bc1bf767474819792c23f32d8286a45736f1c6",
 			"revisionTime": "2016-12-03T19:45:07Z"
+		},
+		{
+			"checksumSHA1": "sOKKo6gC91+8G8bEsg4Kob0k61g=",
+			"path": "github.com/mitchellh/go-testing-interface",
+			"revision": "6d0b8010fcc857872e42fc6c931227569016843c",
+			"revisionTime": "2018-08-26T20:35:19Z"
+		},
+		{
+			"checksumSHA1": "J+g0oZePWp2zSIISD2dZZKTxmgg=",
+			"path": "github.com/mitchellh/mapstructure",
+			"revision": "3536a929edddb9a5b34bd6861dc4a9647cb459fe",
+			"revisionTime": "2018-10-05T04:51:35Z"
 		},
 		{
 			"checksumSHA1": "ljd3FhYRJ91cLZz3wsH9BQQ2JbA=",
