@@ -82,6 +82,7 @@ func NewElection(c *ElectionConfig) *Election {
 func (e *Election) createSession() (err error) {
 	ses := &api.SessionEntry{
 		Checks: e.Checks,
+		TTL: (3*e.CheckTimeout).String(),
 	}
 	e.sessionID, _, err = e.Client.Session().Create(ses, nil)
 	if err != nil {
@@ -278,6 +279,7 @@ func (e *Election) waitSession() {
 		isset, err := e.checkSession()
 
 		if isset {
+			e.Client.Session().Renew(e.sessionID, nil)
 			break
 		}
 		e.disableLeader()
