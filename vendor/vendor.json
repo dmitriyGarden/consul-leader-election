@@ -9,12 +9,12 @@
 			"revisionTime": "2018-02-21T18:27:44Z"
 		},
 		{
-			"checksumSHA1": "dc6+x3Ovk0idCZP3s0GCVxVFJuA=",
+			"checksumSHA1": "8zDlFGWrjxMsxQ9M7ZD//gb0398=",
 			"path": "github.com/hashicorp/consul/api",
-			"revision": "501c22b5563935713596034d47a1cbdef1ec1904",
-			"revisionTime": "2019-05-22T19:57:22Z",
-			"version": "v1.4.5",
-			"versionExact": "v1.4.5"
+			"revision": "a82e6a7fd33a0d05b9b871bcaf1d7595c9b8dedc",
+			"revisionTime": "2019-06-27T22:59:46Z",
+			"version": "v1.5.2",
+			"versionExact": "v1.5.2"
 		},
 		{
 			"checksumSHA1": "E28E4zR1FN2v1Xiq4FUER7KVN9M=",
