@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/consul/api"
 	"log"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -82,7 +83,8 @@ func NewElection(c *ElectionConfig) *Election {
 func (e *Election) createSession() (err error) {
 	ses := &api.SessionEntry{
 		Checks: e.Checks,
-		TTL: (3*e.CheckTimeout).String(),
+		// CheckTimeout is duration == nanosecs, TTL is RAW secs (no fmt duration), need transform: ceil(3*x + 1.0)
+		TTL: strconv.Itoa(int(3*e.CheckTimeout.Seconds()+1.0)),	// without math.Ceil :: https://stackoverflow.com/a/37247762
 	}
 	e.sessionID, _, err = e.Client.Session().Create(ses, nil)
 	if err != nil {
