@@ -10,7 +10,7 @@ matrix:
       env: GO111MODULE=on
 
 before_install:
-  - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; else go get -u "github.com/kardianos/govendor" fi
+  - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; else go get -u "github.com/kardianos/govendor"; fi
   - go get -u golang.org/x/lint/golint
 
 env:
