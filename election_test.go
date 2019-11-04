@@ -5,7 +5,7 @@ import (
 
 	"fmt"
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/testutil"
+	"github.com/hashicorp/consul/sdk/testutil"
 	"log"
 	"math/rand"
 	"sync"
