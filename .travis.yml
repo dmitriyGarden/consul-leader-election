@@ -2,8 +2,6 @@ language: go
 
 matrix:
   include:
-    - go: 1.9.x
-    - go: 1.10.x
     - go: 1.11.x
       env: GO111MODULE=on
     - go: 1.12.x
@@ -12,14 +10,13 @@ matrix:
       env: GO111MODULE=on
 
 before_install:
-  - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; else go get -u "github.com/kardianos/govendor"; fi
   - go get -u golang.org/x/lint/golint
   - export CONSUL_VERSION=1.5.2
   - export CONSUL_DOWNLOAD_URL=https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip
 
 install:
-  - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; else make vendor; fi
-  - if [[ "${GO111MODULE}" = "on" ]]; then export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"; fi
+  - go mod download
+  - export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"
   - wget ${CONSUL_DOWNLOAD_URL}
   - unzip ./consul_${CONSUL_VERSION}_linux_amd64.zip
   - cp ./consul ${GOPATH}/bin/consul

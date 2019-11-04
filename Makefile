@@ -1,9 +1,6 @@
-.PHONY: all build vendor test lint
+.PHONY: all build test lint
 
-all: lint vendor test
-
-vendor:
-	govendor sync
+all: lint  test
 
 test:
 	go test -race -coverprofile=coverage.txt -covermode=atomic
