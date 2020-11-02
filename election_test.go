@@ -259,11 +259,11 @@ func makeCluster(t *testing.T) []*testutil.TestServer {
 	// Create a cluster of servers
 	for i := 0; i < clucterSize; i++ {
 		if i == 0 {
-			servers[i], err = testutil.NewTestServerConfig(func(c *testutil.TestServerConfig) {
+			servers[i], err = testutil.NewTestServerConfigT(t, func(c *testutil.TestServerConfig) {
 				c.LogLevel = "err"
 			})
 		} else {
-			servers[i], err = testutil.NewTestServerConfig(func(c *testutil.TestServerConfig) {
+			servers[i], err = testutil.NewTestServerConfigT(t, func(c *testutil.TestServerConfig) {
 				c.LogLevel = "err"
 				c.Bootstrap = false
 			})
