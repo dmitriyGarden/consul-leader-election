@@ -5,7 +5,6 @@ package election
 import (
 	"github.com/hashicorp/consul/api"
 	"log"
-	"runtime"
 	"sync"
 	"time"
 )
@@ -32,6 +31,7 @@ type Election struct {
 	stop         chan struct{} // chnnel to stop process
 	success      chan struct{} // channel for the signal that the process is stopped
 	Event        Notifier
+	timer        *time.Timer
 	sync.RWMutex
 }
 
@@ -75,6 +75,7 @@ func NewElection(c *ElectionConfig) *Election {
 		stop:         make(chan struct{}),
 		success:      make(chan struct{}),
 		Event:        c.Event,
+		timer:        newStoppedTimer(),
 	}
 	return e
 }
@@ -161,7 +162,9 @@ func (e *Election) Init() {
 		if !e.isInit() {
 			break
 		}
-		wait(e.CheckTimeout)
+		if !e.wait() {
+			break
+		}
 	}
 	e.logDebug("I'm finished")
 }
@@ -201,7 +204,9 @@ func (e *Election) isNeedAquire() bool {
 		res, err = e.getKvSession()
 		if err != nil {
 			e.disableLeader()
-			wait(e.CheckTimeout)
+			if !e.wait() {
+				break
+			}
 		} else {
 			break
 		}
@@ -255,16 +260,20 @@ func (e *Election) Stop() {
 	<-e.success
 }
 
+func (e *Election) onStop() {
+	e.inited = false
+	e.logDebug("Stop signal recieved")
+	e.disableLeader()
+	e.destroyCurrentSession()
+	e.success <- struct{}{}
+	e.logDebug("Send success")
+}
+
 func (e *Election) isInit() bool {
 	for {
 		select {
 		case <-e.stop:
-			e.inited = false
-			e.logDebug("Stop signal recieved")
-			e.disableLeader()
-			e.destroyCurrentSession()
-			e.success <- struct{}{}
-			e.logDebug("Send success")
+			e.onStop()
 		default:
 			return e.inited
 		}
@@ -288,7 +297,9 @@ func (e *Election) waitSession() {
 			if !e.isInit() {
 				break
 			}
-			wait(e.CheckTimeout)
+			if !e.wait() {
+				break
+			}
 			continue
 		}
 		err = e.createSession()
@@ -300,13 +311,21 @@ func (e *Election) waitSession() {
 		if !e.isInit() {
 			break
 		}
-		wait(e.CheckTimeout)
+		if !e.wait() {
+			break
+		}
 	}
 }
 
-func wait(t time.Duration) {
-	runtime.Gosched()
-	time.Sleep(t)
+func (e *Election) wait() (elapsed bool) {
+	resetTimer(e.timer, e.CheckTimeout)
+	select {
+	case <-e.stop:
+		e.onStop()
+		return false
+	case <-e.timer.C:
+		return true
+	}
 }
 
 func (e *Election) logError(err string) {
@@ -325,4 +344,17 @@ func (e *Election) logInfo(s string) {
 	if e.logLevel >= LogInfo {
 		log.Println(e.LogPrefix + " [INFO] " + s)
 	}
+}
+
+func newStoppedTimer() *time.Timer {
+	tmr := time.NewTimer(1000 * time.Hour)
+	tmr.Stop()
+	return tmr
+}
+
+func resetTimer(tmr *time.Timer, dur time.Duration) {
+	if !tmr.Stop() {
+		<-tmr.C
+	}
+	tmr.Reset(dur)
 }
