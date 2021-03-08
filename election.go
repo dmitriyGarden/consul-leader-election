@@ -279,6 +279,16 @@ func (e *Election) isInit() bool {
 		return e.inited
 	}
 
+	// drain the stop channel
+loop:
+	for {
+		select {
+		case <-e.stop:
+		default:
+			break loop
+		}
+	}
+
 	e.inited = false
 	e.disableLeader()
 	e.destroyCurrentSession()
