@@ -3,10 +3,12 @@ package election
 // Leader election
 // https://www.consul.io/docs/guides/leader-election.html
 import (
-	"github.com/hashicorp/consul/api"
+	"context"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/consul/api"
 )
 
 // Log levels
@@ -32,6 +34,7 @@ type Election struct {
 	success      chan struct{} // channel for the signal that the process is stopped
 	Event        Notifier
 	timer        *time.Timer
+	context      context.Context
 	sync.RWMutex
 }
 
@@ -76,6 +79,7 @@ func NewElection(c *ElectionConfig) *Election {
 		success:      make(chan struct{}),
 		Event:        c.Event,
 		timer:        newStoppedTimer(),
+		context:      context.Background(),
 	}
 	return e
 }
@@ -83,7 +87,7 @@ func NewElection(c *ElectionConfig) *Election {
 func (e *Election) createSession() (err error) {
 	ses := &api.SessionEntry{
 		Checks: e.Checks,
-		TTL: (3*e.CheckTimeout).String(),
+		TTL:    (3 * e.CheckTimeout).String(),
 	}
 	e.sessionID, _, err = e.Client.Session().Create(ses, nil)
 	if err != nil {
@@ -146,6 +150,11 @@ func (e *Election) getKvSession() (string, error) {
 
 // Init starting election process
 func (e *Election) Init() {
+	e.InitContext(nil)
+}
+
+// Init starting election process, ctx can be used to stop the election process.
+func (e *Election) InitContext(ctx context.Context) {
 	e.Lock()
 	if e.inited {
 		e.Unlock()
@@ -153,6 +162,10 @@ func (e *Election) Init() {
 		return
 	}
 	e.inited = true
+	e.context = ctx
+	if ctx == nil {
+		e.context = context.Background()
+	}
 	e.Unlock()
 	for {
 		if !e.isInit() {
@@ -162,9 +175,7 @@ func (e *Election) Init() {
 		if !e.isInit() {
 			break
 		}
-		if !e.wait() {
-			break
-		}
+		e.wait()
 	}
 	e.logDebug("I'm finished")
 }
@@ -204,9 +215,7 @@ func (e *Election) isNeedAquire() bool {
 		res, err = e.getKvSession()
 		if err != nil {
 			e.disableLeader()
-			if !e.wait() {
-				break
-			}
+			e.wait()
 		} else {
 			break
 		}
@@ -248,7 +257,7 @@ func (e *Election) enableLeader() {
 	e.Unlock()
 }
 
-// Stop election process
+// Stop election process and wait for shutdown
 func (e *Election) Stop() {
 	e.RLock()
 	if !e.inited {
@@ -260,24 +269,22 @@ func (e *Election) Stop() {
 	<-e.success
 }
 
-func (e *Election) onStop() {
+func (e *Election) isInit() bool {
+	select {
+	case <-e.context.Done():
+		e.logDebug("Context cancelled")
+	case <-e.stop:
+		e.logDebug("Stop signal recieved")
+	default:
+		return e.inited
+	}
+
 	e.inited = false
-	e.logDebug("Stop signal recieved")
 	e.disableLeader()
 	e.destroyCurrentSession()
 	e.success <- struct{}{}
 	e.logDebug("Send success")
-}
-
-func (e *Election) isInit() bool {
-	for {
-		select {
-		case <-e.stop:
-			e.onStop()
-		default:
-			return e.inited
-		}
-	}
+	return false
 }
 
 func (e *Election) waitSession() {
@@ -297,9 +304,7 @@ func (e *Election) waitSession() {
 			if !e.isInit() {
 				break
 			}
-			if !e.wait() {
-				break
-			}
+			e.wait()
 			continue
 		}
 		err = e.createSession()
@@ -311,20 +316,15 @@ func (e *Election) waitSession() {
 		if !e.isInit() {
 			break
 		}
-		if !e.wait() {
-			break
-		}
+		e.wait()
 	}
 }
 
-func (e *Election) wait() (elapsed bool) {
+func (e *Election) wait() {
 	resetTimer(e.timer, e.CheckTimeout)
 	select {
-	case <-e.stop:
-		e.onStop()
-		return false
 	case <-e.timer.C:
-		return true
+	case <-e.context.Done():
 	}
 }
 
