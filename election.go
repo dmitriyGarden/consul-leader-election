@@ -3,9 +3,10 @@ package election
 // Leader election
 // https://www.consul.io/docs/guides/leader-election.html
 import (
+	"context"
+	"errors"
 	"github.com/hashicorp/consul/api"
 	"log"
-	"runtime"
 	"sync"
 	"time"
 )
@@ -28,9 +29,10 @@ type Election struct {
 	logLevel     uint8       //  Log level LogDisable|LogError|LogInfo|LogDebug
 	inited       bool        // Flag of init.
 	CheckTimeout time.Duration
-	LogPrefix    string        // Prefix for a log
-	stop         chan struct{} // chnnel to stop process
-	success      chan struct{} // channel for the signal that the process is stopped
+	LogPrefix    string // Prefix for a log
+	ctx          context.Context
+	done         context.CancelFunc
+	success      chan struct{}
 	Event        Notifier
 	sync.RWMutex
 }
@@ -63,8 +65,9 @@ func (e *Election) SetLogLevel(level uint8) {
 	e.logLevel = level
 }
 
-// Params: Consul client, slice of associated health checks, service name
+// NewElection create new elector
 func NewElection(c *ElectionConfig) *Election {
+	ctx, done := context.WithCancel(context.Background())
 	e := &Election{
 		Client:       c.Client,
 		Checks:       append(c.Checks, "serfHealth"),
@@ -72,7 +75,8 @@ func NewElection(c *ElectionConfig) *Election {
 		Kv:           c.Key,
 		CheckTimeout: c.CheckTimeout,
 		LogPrefix:    c.LogPrefix,
-		stop:         make(chan struct{}),
+		ctx:          ctx,
+		done:         done,
 		success:      make(chan struct{}),
 		Event:        c.Event,
 	}
@@ -82,7 +86,7 @@ func NewElection(c *ElectionConfig) *Election {
 func (e *Election) createSession() (err error) {
 	ses := &api.SessionEntry{
 		Checks: e.Checks,
-		TTL: (3*e.CheckTimeout).String(),
+		TTL:    (3 * e.CheckTimeout).String(),
 	}
 	e.sessionID, _, err = e.Client.Session().Create(ses, nil)
 	if err != nil {
@@ -92,7 +96,6 @@ func (e *Election) createSession() (err error) {
 }
 
 func (e *Election) checkSession() (bool, error) {
-
 	if e.sessionID == "" {
 		return false, nil
 	}
@@ -101,7 +104,6 @@ func (e *Election) checkSession() (bool, error) {
 	if err != nil {
 		e.logError("Info session error " + err.Error())
 	}
-
 	return res != nil, err
 }
 
@@ -145,6 +147,11 @@ func (e *Election) getKvSession() (string, error) {
 
 // Init starting election process
 func (e *Election) Init() {
+	e.InitContext(context.Background())
+}
+
+// InitContext starting election process with context
+func (e *Election) InitContext(ctx context.Context) {
 	e.Lock()
 	if e.inited {
 		e.Unlock()
@@ -152,21 +159,34 @@ func (e *Election) Init() {
 		return
 	}
 	e.inited = true
+	e.done()
+	e.ctx, e.done = context.WithCancel(ctx)
 	e.Unlock()
-	for {
-		if !e.isInit() {
-			break
-		}
-		e.process()
-		if !e.isInit() {
-			break
-		}
-		wait(e.CheckTimeout)
-	}
+	e.background()
 	e.logDebug("I'm finished")
 }
 
-// Start re-election
+func (e *Election) background() {
+	e.process()
+	ticker := time.NewTicker(e.CheckTimeout)
+	for {
+		select {
+		case <-ticker.C:
+			e.process()
+		case <-e.ctx.Done():
+			ticker.Stop()
+			e.inited = false
+			e.logDebug("Stop signal received")
+			e.disableLeader()
+			e.destroyCurrentSession()
+			e.success <- struct{}{}
+			e.logDebug("Send success")
+			return
+		}
+	}
+}
+
+//ReElection start re-election
 func (e *Election) ReElection() error {
 	s, err := e.getKvSession()
 	if s != "" {
@@ -191,22 +211,33 @@ func (e *Election) destroyCurrentSession() (err error) {
 	return
 }
 
-func (e *Election) isNeedAquire() bool {
-	var res string
-	var err error
-	for {
-		if !e.isInit() {
-			break
-		}
-		res, err = e.getKvSession()
-		if err != nil {
-			e.disableLeader()
-			wait(e.CheckTimeout)
-		} else {
-			break
-		}
-
+func (e *Election) waitSessionData() (string, error) {
+	res, err := e.getKvSession()
+	if err == nil {
+		return res, nil
 	}
+	e.disableLeader()
+	ticker := time.NewTicker(e.CheckTimeout)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			res, err = e.getKvSession()
+			if err == nil {
+				return res, nil
+			}
+		case <-e.ctx.Done():
+			return "", errors.New("cancelled")
+		}
+	}
+}
+
+func (e *Election) isNeedAquire() bool {
+	res, err := e.waitSessionData()
+	if err != nil {
+		return false
+	}
+
 	if e.sessionID != "" && e.sessionID == res {
 		e.enableLeader()
 	}
@@ -233,12 +264,10 @@ func (e *Election) process() {
 
 func (e *Election) enableLeader() {
 	e.Lock()
-	if e.isInit() {
-		e.leader = true
-		e.logDebug("I'm a leader!")
-		if e.Event != nil {
-			e.Event.EventLeader(true)
-		}
+	e.leader = true
+	e.logDebug("I'm a leader!")
+	if e.Event != nil {
+		e.Event.EventLeader(true)
 	}
 	e.Unlock()
 }
@@ -251,62 +280,49 @@ func (e *Election) Stop() {
 		return
 	}
 	e.RUnlock()
-	e.stop <- struct{}{}
+	e.done()
 	<-e.success
 }
 
-func (e *Election) isInit() bool {
-	for {
-		select {
-		case <-e.stop:
-			e.inited = false
-			e.logDebug("Stop signal recieved")
-			e.disableLeader()
-			e.destroyCurrentSession()
-			e.success <- struct{}{}
-			e.logDebug("Send success")
-		default:
-			return e.inited
-		}
+func (e *Election) processSession() error {
+	isset, err := e.checkSession()
+
+	if isset {
+		e.Client.Session().Renew(e.sessionID, nil)
+		return nil
 	}
+	e.disableLeader()
+	if err != nil {
+		e.logDebug("Try to get session info again.")
+		return err
+	}
+	err = e.createSession()
+
+	if err == nil {
+		e.logDebug("Session " + e.sessionID + " created")
+		return err
+	}
+	return nil
 }
 
 func (e *Election) waitSession() {
-	for {
-		if !e.isInit() {
-			break
-		}
-		isset, err := e.checkSession()
-
-		if isset {
-			e.Client.Session().Renew(e.sessionID, nil)
-			break
-		}
-		e.disableLeader()
-		if err != nil {
-			e.logDebug("Try to get session info again.")
-			if !e.isInit() {
-				break
-			}
-			wait(e.CheckTimeout)
-			continue
-		}
-		err = e.createSession()
-
-		if err == nil {
-			e.logDebug("Session " + e.sessionID + " created")
-			break
-		}
-		if !e.isInit() {
-			break
-		}
-		wait(e.CheckTimeout)
+	err := e.processSession()
+	if err == nil {
+		return
 	}
-}
-
-func wait(t time.Duration) {
-	runtime.Gosched()
-	time.Sleep(t)
+	ticker := time.NewTicker(e.CheckTimeout)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			err = e.processSession()
+			if err == nil {
+				return
+			}
+		case <-e.ctx.Done():
+			return
+		}
+	}
 }
 
 func (e *Election) logError(err string) {

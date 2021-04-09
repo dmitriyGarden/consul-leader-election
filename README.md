@@ -1,6 +1,7 @@
 Consul leader election
 [![Build Status](https://travis-ci.org/dmitriyGarden/consul-leader-election.svg?branch=master)](https://travis-ci.org/dmitriyGarden/consul-leader-election)
 [![codecov](https://codecov.io/gh/dmitriyGarden/consul-leader-election/branch/master/graph/badge.svg)](https://codecov.io/gh/dmitriyGarden/consul-leader-election)
+[![GoDoc](https://pkg.go.dev/badge/github.com/dmitriyGarden/consul-leader-election?status.svg)](https://pkg.go.dev/github.com/dmitriyGarden/consul-leader-election?tab=doc)
 ======================
 
 This package provides leader election through consul
@@ -9,28 +10,28 @@ This package provides leader election through consul
 
  How to use
  ==========
+
  ```go
  package main
 
     import(
         "github.com/hashicorp/consul/api"
         "github.com/dmitriyGarden/consul-leader-election"
+        "fmt"
     )
+    type notify struct {
+       T  string
+    }
+    func (n *notify)EventLeader(f bool)  {
+        if f {
+            fmt.Println(n.T, "I'm the leader!")
+        } else {
+            fmt.Println(n.T, "I'm no longer the leader!")
+        }
+    }
     func main(){
         conf := api.DefaultConfig()
     	consul, _ := api.NewClient(conf)
-    	type notify struct {
-    	    T  string
-    	}
-
-        func (n *notify)EventLeader(f bool)  {
-            if f {
-                 fmt.Println(n.T, "I'm the leader!")
-            } else {
-                fmt.Println(n.T, "I'm no longer the leader!")
-            }
-        }
-
         n := &notify{
         	T: "My service",
         }
