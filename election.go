@@ -5,10 +5,11 @@ package election
 import (
 	"context"
 	"errors"
-	"github.com/hashicorp/consul/api"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/consul/api"
 )
 
 // Log levels
@@ -21,19 +22,20 @@ const (
 
 // Election implements to detect a leader in a cluster of services
 type Election struct {
-	Client       *api.Client // Consul client
-	Checks       []string    // Slice of associated health checks
-	leader       bool        // Flag of a leader
-	Kv           string      // Key in Consul kv
-	sessionID    string      // Id of session
-	logLevel     uint8       //  Log level LogDisable|LogError|LogInfo|LogDebug
-	inited       bool        // Flag of init.
-	CheckTimeout time.Duration
-	LogPrefix    string // Prefix for a log
-	ctx          context.Context
-	done         context.CancelFunc
-	success      chan struct{}
-	Event        Notifier
+	Client           *api.Client // Consul client
+	Checks           []string    // Slice of associated health checks
+	leader           bool        // Flag of a leader
+	Kv               string      // Key in Consul kv
+	sessionID        string      // Id of session
+	logLevel         uint8       //  Log level LogDisable|LogError|LogInfo|LogDebug
+	inited           bool        // Flag of init.
+	CheckTimeout     time.Duration
+	SessionLockDelay time.Duration
+	LogPrefix        string // Prefix for a log
+	ctx              context.Context
+	done             context.CancelFunc
+	success          chan struct{}
+	Event            Notifier
 	sync.RWMutex
 }
 
@@ -44,13 +46,14 @@ type Notifier interface {
 
 // ElectionConfig config for Election
 type ElectionConfig struct {
-	Client       *api.Client // Consul client
-	Checks       []string    // Slice of associated health checks
-	Key          string      // Key in Consul KV
-	LogLevel     uint8       // Log level LogDisable|LogError|LogInfo|LogDebug
-	LogPrefix    string      // Prefix for a log
-	Event        Notifier
-	CheckTimeout time.Duration
+	Client           *api.Client // Consul client
+	Checks           []string    // Slice of associated health checks
+	Key              string      // Key in Consul KV
+	LogLevel         uint8       // Log level LogDisable|LogError|LogInfo|LogDebug
+	LogPrefix        string      // Prefix for a log
+	Event            Notifier
+	CheckTimeout     time.Duration
+	SessionLockDelay time.Duration
 }
 
 // IsLeader check a leader
@@ -69,24 +72,26 @@ func (e *Election) SetLogLevel(level uint8) {
 func NewElection(c *ElectionConfig) *Election {
 	ctx, done := context.WithCancel(context.Background())
 	e := &Election{
-		Client:       c.Client,
-		Checks:       append(c.Checks, "serfHealth"),
-		leader:       false,
-		Kv:           c.Key,
-		CheckTimeout: c.CheckTimeout,
-		LogPrefix:    c.LogPrefix,
-		ctx:          ctx,
-		done:         done,
-		success:      make(chan struct{}),
-		Event:        c.Event,
+		Client:           c.Client,
+		Checks:           append(c.Checks, "serfHealth"),
+		leader:           false,
+		Kv:               c.Key,
+		CheckTimeout:     c.CheckTimeout,
+		SessionLockDelay: c.SessionLockDelay,
+		LogPrefix:        c.LogPrefix,
+		ctx:              ctx,
+		done:             done,
+		success:          make(chan struct{}),
+		Event:            c.Event,
 	}
 	return e
 }
 
 func (e *Election) createSession() (err error) {
 	ses := &api.SessionEntry{
-		Checks: e.Checks,
-		TTL:    (3 * e.CheckTimeout).String(),
+		Checks:    e.Checks,
+		TTL:       (3 * e.CheckTimeout).String(),
+		LockDelay: e.SessionLockDelay,
 	}
 	e.sessionID, _, err = e.Client.Session().Create(ses, nil)
 	if err != nil {

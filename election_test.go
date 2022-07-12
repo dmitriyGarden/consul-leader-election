@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"fmt"
-	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/sdk/testutil"
 	"log"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/sdk/testutil"
 )
 
 const (
