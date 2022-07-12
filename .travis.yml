@@ -2,16 +2,16 @@ language: go
 
 matrix:
   include:
-    - go: 1.14.x
-      env: GO111MODULE=on
-    - go: 1.15.x
-      env: GO111MODULE=on
     - go: 1.16.x
+      env: GO111MODULE=on
+    - go: 1.17.x
+      env: GO111MODULE=on
+    - go: 1.18.x
       env: GO111MODULE=on
 
 before_install:
   - go get -u golang.org/x/lint/golint
-  - export CONSUL_VERSION=1.9.4
+  - export CONSUL_VERSION=1.12.2
   - export CONSUL_DOWNLOAD_URL=https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip
 
 install:
