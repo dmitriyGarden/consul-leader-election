@@ -2,11 +2,11 @@ language: go
 
 matrix:
   include:
-    - go: 1.16.x
-      env: GO111MODULE=on
-    - go: 1.17.x
-      env: GO111MODULE=on
     - go: 1.18.x
+      env: GO111MODULE=on
+    - go: 1.19.x
+      env: GO111MODULE=on
+    - go: 1.20.x
       env: GO111MODULE=on
 
 before_install:
